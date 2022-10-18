@@ -9,6 +9,8 @@
     
 2. Run the `RunMe.bat` file or open the `src/index.html` file in you browser (thats all the .bat file does)
 
+3. Click on the screen to be able to use controls
+
 ## Controls:
 
 - Arrow Keys - Move around
