@@ -124,6 +124,7 @@ function addControls(canvas, drawScene) {
 function configureGL(canvas){
   var gl = canvas.getContext("webgl2");
   if (!gl) {
+    console.error("WebGL 2 is not available");
     return;
   }
 
