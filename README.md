@@ -1,4 +1,8 @@
 ## How to use:
+- Visit https://benjacobs-dev.github.io/PatternMaker/
+
+or: 
+
 1. Download the code
     
     1.1. Click the Green `Code` button in the top right in GitHub
