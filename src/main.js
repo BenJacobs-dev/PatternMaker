@@ -34,92 +34,72 @@ precision highp float;
 out vec4 frag_color;
 
 uniform vec2 u_resolution;
-uniform vec2 u_zoom;
-uniform vec2 u_center;
+uniform vec2 u_mod_val;
 
 #define MAX_ITERATIONS 1000
 
-int get_iterations()
-{
-    vec2 c = (gl_FragCoord.xy - u_resolution.xy / 2.0) / (u_resolution.y / u_zoom.y) + u_center;
-    float real = c.x;
-    float imag = c.y;
- 
-    int iterations = 0;
-    float const_real = real;
-    float const_imag = imag;
-
-    float real2 = real * real;
-    float imag2 = imag * imag;
- 
-    for (int i = 0; i < MAX_ITERATIONS; i++)
-    {
-        imag = (real + real) * imag + const_imag;
-        real = real2 - imag2 + const_real;
-        real2 = real * real;
-        imag2 = imag * imag;  
-
-        if (real2 + imag2 > 4.0)
-            return i;
-    }
-    return MAX_ITERATIONS;
+float get_value(int x, int y, int hsx, int hsy) {
+  return (float((abs(x-hsx)+1) * (abs(y-hsy)+1)) * u_mod_val.y * u_mod_val.y) / 100.0; 
 }
-vec4 return_color()
+
+vec4 return_color(float number)
 {
-    int iter = get_iterations();
-    if (iter == MAX_ITERATIONS)
-    {
-        gl_FragDepth = 0.0f;
-        return vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    }
- 
-    int iterations = iter % 12;    
+    int iterations = int(number) % int(u_mod_val.x);
+
     if (iterations == 0) {
-      return vec4(1.0f, 0.0f, 0.0f, 1.0f);
+      return vec4(1.0f, 0.0f, 0.0f, 1.0f); // RED
     }
-    else if (iterations == 1) {
-      return vec4(1.0f, 0.27058825f, 0.0f, 1.0f);
+    else if (iterations == 1) { 
+      return vec4(1.0f, 0.27058825f, 0.0f, 1.0f); // ORANGERED
     }
     else if (iterations == 2) {
-      return vec4(1.0f, 0.64705884f, 0.0f, 1.0f);
+      return vec4(1.0f, 0.64705884f, 0.0f, 1.0f); // ORANGE
     }
     else if (iterations == 3) {
-      return vec4(1.0f, 0.84313726f, 0.0f, 1.0f);
+      return vec4(1.0f, 0.84313726f, 0.0f, 1.0f); // GOLD
     }
     else if (iterations == 4) {
-      return vec4(1.0f, 1.0f, 0.0f, 1.0f);
+      return vec4(1.0f, 1.0f, 0.0f, 1.0f); // YELLOW
     }
     else if (iterations == 5) {
-      return vec4(0.6039216f, 0.8039216f, 0.19607843f, 1.0f);
+      return vec4(0.6039216f, 0.8039216f, 0.19607843f, 1.0f); // YELLOWGREEN
     }
     else if (iterations == 6) {
-      return vec4(0.0f, 0.5019608f, 0.0f, 1.0f);
+      return vec4(0.0f, 0.5019608f, 0.0f, 1.0f); // GREEN
     }
     else if (iterations == 7) {
-      return vec4(0.0f, 0.54509807f, 0.54509807f, 1.0f);
+      return vec4(0.0f, 0.54509807f, 0.54509807f, 1.0f); // TURQUOISE
     }
     else if (iterations == 8) {
-      return vec4(0.0f, 0.0f, 1.0f, 1.0f);
+      return vec4(0.0f, 0.0f, 1.0f, 1.0f); // BLUE
     }
     else if (iterations == 9) {
-      return vec4(0.41568628f, 0.3529412f, 0.8039216f, 1.0f);
+      return vec4(0.41568628f, 0.3529412f, 0.8039216f, 1.0f); // INDIGO
     }
     else if (iterations == 10) {
-      return vec4(0.5019608f, 0.0f, 0.5019608f, 1.0f);
+      return vec4(0.5019608f, 0.0f, 0.5019608f, 1.0f); // VIOLET
     }
     else if (iterations == 11) {
-      return vec4(0.78039217f, 0.08235294f, 0.52156866f, 1.0f);
+      return vec4(0.78039217f, 0.08235294f, 0.52156866f, 1.0f); // DEEPPINK
+    }
+    else {
+      return vec4(0.0f, 0.0f, 0.0f, 1.0f); // BLACK
     }
 }
  
 void main()
 {
-    frag_color = return_color();
+  int pixels = 1;
+  int x = int(gl_FragCoord.x)/pixels*pixels;
+  int y = int(gl_FragCoord.y)/pixels*pixels;
+  frag_color = return_color(get_value(x, y, int(u_resolution.x)/2, int(u_resolution.y)/2));
 }
 `;
 
-let zoom = 2;
-let center = [-0.5, 0];
+let modVal = 17;
+let multi = 1;
+let multiChange = 0.01;
+let delay = 1000/144;
 
 function main() {
   // Get A WebGL context
@@ -128,31 +108,16 @@ function main() {
   let drawScene = configureGL(canvas);
   addControls(canvas, drawScene);
   
-  drawScene();
+  setInterval(() => {
+    drawScene();
+    multi += multiChange;
+  }, delay)
 
 }
 
 function addControls(canvas, drawScene) {
   canvas.addEventListener('keydown', (e) => {
-    if(e.key == 'ArrowUp'){
-      center[1] += 0.1*zoom;
-    }
-    else if(e.key == 'ArrowDown'){
-      center[1] -= 0.1*zoom;
-    }
-    else if(e.key == 'ArrowLeft'){
-      center[0] -= 0.1*zoom;
-    }
-    else if(e.key == 'ArrowRight'){
-      center[0] += 0.1*zoom;
-    }
-    else if(e.key == 'w'){
-      zoom /= 1.1;
-    }
-    else if(e.key == 's'){
-      zoom *= 1.1;
-    }
-    drawScene();
+    
   });
 }
 
@@ -170,8 +135,7 @@ function configureGL(canvas){
 
   // look up uniform locations
   var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-  var zoomUniformLocation = gl.getUniformLocation(program, "u_zoom");
-  var centerUniformLocation = gl.getUniformLocation(program, "u_center");
+  var zoomUniformLocation = gl.getUniformLocation(program, "u_mod_val");
 
   // Create a buffer and put a single pixel space rectangle in
   // it (2 triangles)
@@ -211,6 +175,9 @@ function configureGL(canvas){
 
     gl.disable(gl.DITHER);
 
+
+  console.log(gl.canvas.clientWidth, gl.canvas.clientHeight);
+
   function drawScene(){
 
     webglUtils.resizeCanvasToDisplaySize(gl.canvas);
@@ -231,8 +198,7 @@ function configureGL(canvas){
     // Pass in the canvas resolution so we can convert from
     // pixels to clipspace in the shader
     gl.uniform2f(resolutionUniformLocation, gl.canvas.clientWidth, gl.canvas.clientHeight);
-    gl.uniform2f(zoomUniformLocation, zoom, zoom);
-    gl.uniform2f(centerUniformLocation, center[0], center[1]);
+    gl.uniform2f(zoomUniformLocation, modVal, multi);
 
     // draw
     var primitiveType = gl.TRIANGLES;
